@@ -5,22 +5,27 @@ import pandas as pid
 import numpy as np
 import torch, os, clip, pickle, mlflow, time, sys
 
-root_path = os.getcwd() 
+root_path = os.getcwd()
+root_path = os.path.abspath(os.path.join(root_path, os.pardir))
+
+
 os.chdir(root_path)
 
 from modules.data_processing import *
 from modules.model import *
 
+
+root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'QML')
 NQUBITS = 5
 NLAYERS = 3
 IMG_DIM = 512
 
-txt_path = os.path.join(root_path, 'ARO/text_circuits/attribution')
-img_path = os.path.join(root_path, 'ARO/images')
+txt_path = os.path.join(root_path, 'ARO/attribution')
+img_path = os.path.join(root_path, 'img_encodings/ARO/Attribution')
 
-train_einsum = load_pkl(os.path.join(txt_path, 'aro_train_einsum_as_53.pkl'))
-valid_einsum = load_pkl(os.path.join(txt_path, 'aro_valid_einsum_as_53.pkl'))
-test_einsum = load_pkl(os.path.join(txt_path, 'aro_test_einsum_as_53.pkl'))
+train_einsum = load_pkl(os.path.join(txt_path, 'aro_train_einsum_as_12.pkl'))
+valid_einsum = load_pkl(os.path.join(txt_path, 'aro_valid_einsum_as_12.pkl'))
+test_einsum = load_pkl(os.path.join(txt_path, 'aro_test_einsum_as_12.pkl'))
 train_pos_einsum, train_neg_einsum = zip(*train_einsum)
 valid_pos_einsum, valid_neg_einsum = zip(*valid_einsum)
 test_pos_einsum, test_neg_einsum = zip(*test_einsum)

@@ -2,9 +2,10 @@ from itertools import count
 from collections import Counter, defaultdict
 from abc import ABC, abstractmethod
 from tqdm import tqdm
+from random import randint
 import torch
 import pennylane as qml
-from qiskit import QuantumCircuit
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit import Parameter
 import numpy as np
 
@@ -721,10 +722,17 @@ def BatchCRy(phase, dtype=torch.complex64):
 
     return full_mat.view(B, 2, 2, 2, 2)
 
-def tn2qiskit(einsum_expr, gate_arr):
+def expr2list(einsum_expr):
+    einsum_list = einsum_expr.split("->")
+    einsum_list[0] = einsum_list[0].split(",")
+    return einsum_list
+
+def tn2qiskit(einsum_expr, gate_arr, meas_output=True, all_params_dict=None, num_output=9):
     input_indices, out_list = einsum_expr
     nq = sum(1 for _, gate in gate_arr if gate == '0')
-    qc = QuantumCircuit(nq, nq)
+    qreg = QuantumRegister(nq, f"qc{randint(1,10000)}")
+    creg = ClassicalRegister(nq, f"c{randint(1,10000)}")
+    qc = QuantumCircuit(qreg, creg)
     wire2q = defaultdict(list)
     qcounter = 0
     param_dict = {}
@@ -745,10 +753,15 @@ def tn2qiskit(einsum_expr, gate_arr):
             gate_func = getattr(qc, gate.lower())
             if symbol is None:
                 gate_func(*q_targets)
+            elif type(symbol) is not str:
+                gate_func(symbol, *q_targets)
             else:
                 new_param = Parameter(symbol)
                 gate_func(new_param, *q_targets)
-                param_dict[new_param] = np.random.rand() * 2 * np.pi
+                if all_params_dict is not None:
+                    param_dict[new_param] = all_params_dict[symbol]
+                else:
+                    param_dict[new_param] = np.random.rand() * 2 * np.pi
             
             for w, q in zip(out_wires, q_targets):
                 wire2q[w].append(q) 
@@ -763,7 +776,9 @@ def tn2qiskit(einsum_expr, gate_arr):
             qc.measure(q_right, q_right)
         elif len(q_list) == 1:
             q_out = q_list[0]
-            qc.measure(q_out, q_out)
+            if meas_output:
+                qc.measure(q_out, q_out)
             output_qubits.append(q_out)
-    
+
+
     return qc, output_qubits, param_dict

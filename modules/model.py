@@ -308,6 +308,36 @@ def update_model_svo(model, data_loader, loss_fn, acc_fn, optimizer):
 
     N = len(data_loader)
     return (cum_loss/N, cum_acc/N, cum_grad/N)
+
+def update_model_svo2(model, data_loader, loss_fn, acc_fn, optimizer):
+    cum_loss = cum_acc = cum_grad = 0
+    model.train()
+    for batch in data_loader:
+        circ, pos_img_circ, neg_img_circ = batch
+
+        pos_img = model.fast_batch_contract(pos_img_circ, False)
+        neg_img = model.fast_batch_contract(neg_img_circ, False)
+        pos_img = pos_img.reshape(pos_img.size(0), -1)
+        neg_img = neg_img.reshape(neg_img.size(0), -1)
+
+        optimizer.zero_grad()
+        txt = model.fast_batch_contract(circ, True)
+        txt = txt.reshape(txt.size(0), -1)
+        loss = loss_fn(txt, pos_img, model.temp)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) 
+        model.log_temp.data.clamp_(min=torch.log(torch.tensor(0.01)), max=torch.log(torch.tensor(1.0)))
+        optimizer.step()
+        cum_loss += loss.item()
+
+        posres = acc_fn(pos_img, txt)
+        negres = acc_fn(neg_img, txt)
+        cum_acc += (torch.sum((posres > negres))/len(posres)).item()
+
+        cum_grad += model.grad_norm
+
+    N = len(data_loader)
+    return (cum_loss/N, cum_acc/N, cum_grad/N)
     
 def update_model_aro(model, data_loader, loss_fn, acc_fn, optimizer):
     cum_loss = cum_acc = cum_grad = 0
@@ -369,7 +399,7 @@ def update_model_aro2(model, data_loader, loss_fn, acc_fn, optimizer):
     N = len(data_loader)
     return (cum_loss/N, cum_acc/N, cum_grad/N)
 
-def eval_model_svo(model, data_loader, acc_fn):
+def eval_model_svo(model, data_loader, acc_fn, precision=-1):
     cum_acc = 0
     model.eval()
     with torch.no_grad():
@@ -378,6 +408,27 @@ def eval_model_svo(model, data_loader, acc_fn):
 
             pos_img = torch.stack([img_enc for img_enc in pos_img])
             neg_img = torch.stack([img_enc for img_enc in neg_img])
+            txt = model.fast_batch_contract(circ, False)
+
+            pos_img = pos_img.reshape(pos_img.size(0), -1)
+            neg_img = neg_img.reshape(neg_img.size(0), -1)
+            txt = txt.reshape(txt.size(0), -1)
+
+            posres = acc_fn(pos_img, txt, precision)
+            negres = acc_fn(neg_img, txt, precision)
+            cum_acc += (torch.sum((posres > negres))/len(posres)).item()
+    
+    return cum_acc/len(data_loader)
+
+def eval_model_svo2(model, data_loader, acc_fn,precision=-1):
+    cum_acc = 0
+    model.eval()
+    with torch.no_grad():
+        for batch in data_loader:
+            circ, pos_img_circ, neg_img_circ = batch
+
+            pos_img = model.fast_batch_contract(pos_img_circ, False)
+            neg_img = model.fast_batch_contract(neg_img_circ, False)
             txt = model.fast_batch_contract(circ, False)
 
             pos_img = pos_img.reshape(pos_img.size(0), -1)

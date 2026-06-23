@@ -9,7 +9,8 @@ from PIL import Image
 import pandas as pd
 
 clip_model, preprocess = clip.load("ViT-B/32")
-parser_path = '/Users/tls/Desktop/Work/COMP0267/assignment_5/COMP0267_CW/bobcat'
+parser_path = 'C:/Users/Gabriela/Documents/git/QuLIP/modules/bobcat'
+# parser_path = '/Users/tls/Desktop/Work/COMP0267/assignment_5/COMP0267_CW/bobcat'
 ccg_parser = BobcatParser(model_name_or_path=parser_path, cache_dir=parser_path)
 
 def store_pkl(data, fpathname):
@@ -59,11 +60,27 @@ def load_images(fname_arr, fpath):
             img_arr.append(Image.open(img_path).convert('RGB'))
     return img_arr    
 
+def load_images_from_df(df, fpath, img_labels='image_id'):
+    imgs_ids = []
+    for idx in range(len(df)):
+        img_id = df[img_labels].iloc[idx]
+        img_path = os.path.join(fpath, str(img_id)+'.jpg')
+        try:
+            if os.path.exists(img_path):
+                imgs_ids.append(img_id)
+        except Exception as e:
+            print(f"Error loading {img_path}: {e}")
+
+    return load_images(imgs_ids, fpath)
+
+
 def get_valid_images(df, fpath, img_labels='image_id'):
     drop_idx = [] 
 
     for idx in range(len(df)):
         img_idx_arr = df[img_labels].iloc[idx]
+        if type(img_idx_arr) is not list:
+            img_idx_arr = [img_idx_arr]
         for img_idx in img_idx_arr:
             img_path = os.path.join(fpath, str(img_idx)+'.jpg')
             try:
