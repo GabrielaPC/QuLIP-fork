@@ -399,7 +399,7 @@ def update_model_aro2(model, data_loader, loss_fn, acc_fn, optimizer):
     N = len(data_loader)
     return (cum_loss/N, cum_acc/N, cum_grad/N)
 
-def eval_model_svo(model, data_loader, acc_fn, precision=-1):
+def eval_model_svo(model, data_loader, acc_fn):
     cum_acc = 0
     model.eval()
     with torch.no_grad():
@@ -414,13 +414,13 @@ def eval_model_svo(model, data_loader, acc_fn, precision=-1):
             neg_img = neg_img.reshape(neg_img.size(0), -1)
             txt = txt.reshape(txt.size(0), -1)
 
-            posres = acc_fn(pos_img, txt, precision)
-            negres = acc_fn(neg_img, txt, precision)
+            posres = acc_fn(pos_img, txt)
+            negres = acc_fn(neg_img, txt)
             cum_acc += (torch.sum((posres > negres))/len(posres)).item()
     
     return cum_acc/len(data_loader)
 
-def eval_model_svo2(model, data_loader, acc_fn,precision=-1):
+def eval_model_svo2(model, data_loader, acc_fn):
     cum_acc = 0
     model.eval()
     with torch.no_grad():

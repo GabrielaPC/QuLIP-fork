@@ -725,6 +725,8 @@ def BatchCRy(phase, dtype=torch.complex64):
 def expr2list(einsum_expr):
     einsum_list = einsum_expr.split("->")
     einsum_list[0] = einsum_list[0].split(",")
+    for i in range(len(einsum_list[0])):
+       einsum_list[0][i] = [x for x in einsum_list[0][i]] 
     return einsum_list
 
 def tn2qiskit(einsum_expr, gate_arr, meas_output=True, all_params_dict=None, num_output=9):
@@ -759,7 +761,10 @@ def tn2qiskit(einsum_expr, gate_arr, meas_output=True, all_params_dict=None, num
                 new_param = Parameter(symbol)
                 gate_func(new_param, *q_targets)
                 if all_params_dict is not None:
-                    param_dict[new_param] = all_params_dict[symbol]
+                    try:
+                        param_dict[new_param] = all_params_dict[symbol]
+                    except:
+                        param_dict[new_param] = np.random.rand() * 2 * np.pi
                 else:
                     param_dict[new_param] = np.random.rand() * 2 * np.pi
             
@@ -782,3 +787,24 @@ def tn2qiskit(einsum_expr, gate_arr, meas_output=True, all_params_dict=None, num
 
 
     return qc, output_qubits, param_dict
+
+def run_circuits(qc_array, sampler, shots):
+    job = sampler.run(qc_array, shots=shots)
+
+    result_array = []
+    result = job.result()
+    for job in result:
+        counts = job.join_data().get_counts()
+        meas_qubits = len(next(iter(counts.items()))[0])
+        post_selected_shots = counts.get("0"*(meas_qubits),1)
+        try:
+            result_array.append(post_selected_shots/(post_selected_shots + counts.get(f'1{"0"*(meas_qubits - 1)}', 1)))
+        except:
+            result_array.append(0)
+
+    result_array = torch.tensor(result_array)
+    
+    return (torch.full(result_array.size(), torch.pi/2) - torch.acos(result_array.abs().clamp(0,1)))
+
+def acc_circ(pos_f, neg_f):
+    return (torch.sum((pos_f > neg_f))/len(pos_f)).item()

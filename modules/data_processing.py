@@ -9,7 +9,7 @@ from PIL import Image
 import pandas as pd
 
 clip_model, preprocess = clip.load("ViT-B/32")
-parser_path = 'C:/Users/Gabriela/Documents/git/QuLIP/modules/bobcat'
+parser_path = os.path.join(os.getcwd(), 'modules/bobcat')
 # parser_path = '/Users/tls/Desktop/Work/COMP0267/assignment_5/COMP0267_CW/bobcat'
 ccg_parser = BobcatParser(model_name_or_path=parser_path, cache_dir=parser_path)
 
@@ -60,6 +60,14 @@ def load_images(fname_arr, fpath):
             img_arr.append(Image.open(img_path).convert('RGB'))
     return img_arr    
 
+def load_embedding_from_image(fname, fpath):
+    img_path = os.path.join(fpath, str(fname)+'.jpg')
+    if os.path.exists(img_path):
+        img = Image.open(img_path).convert('RGB')
+        img = get_clip_embeddings([img])
+        return img[0]
+    return None    
+
 def load_images_from_df(df, fpath, img_labels='image_id'):
     imgs_ids = []
     for idx in range(len(df)):
@@ -70,8 +78,21 @@ def load_images_from_df(df, fpath, img_labels='image_id'):
                 imgs_ids.append(img_id)
         except Exception as e:
             print(f"Error loading {img_path}: {e}")
-
+    # print(f"ids:{imgs_ids}")
     return load_images(imgs_ids, fpath)
+
+def load_embeddings_from_df(df, fpath, img_labels='image_id'):
+    imgs_embeded = []
+    for idx in range(len(df)):
+        img_id = df[img_labels].iloc[idx]
+        img_path = os.path.join(fpath, str(img_id)+'.jpg')
+        try:
+            if os.path.exists(img_path):
+                imgs_embeded.append(load_embedding_from_image(img_id, fpath))
+        except Exception as e:
+            print(f"Error loading {img_path}: {e}")
+    # print(f"ids:{imgs_ids}")
+    return imgs_embeded
 
 
 def get_valid_images(df, fpath, img_labels='image_id'):
@@ -91,7 +112,7 @@ def get_valid_images(df, fpath, img_labels='image_id'):
                     break
             except Exception as e:
                 print(f"Error loading {img_path}: {e}")
-
+    print(f"droped: {drop_idx}")
     return df.drop(df.index[drop_idx]).reset_index(drop=True)
 
 import numpy as np
