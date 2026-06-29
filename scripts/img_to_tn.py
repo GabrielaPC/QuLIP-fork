@@ -21,9 +21,6 @@ root_path = os.getcwd()
 os.chdir(root_path)
 sys.path.insert(0, root_path)
 
-
-from tn2qiskit_copy import *
-
 from modules.data_processing import *
 from modules.model import *
 from modules.util import *
@@ -52,42 +49,57 @@ swap_img_path = os.path.join(root_path, 'dataset/svo_probes_images')
 # test_pos_img = tuple(test_pos_img)
 # test_neg_img = tuple(test_neg_img)
 
-print("Loading train:")
-df = pd.read_csv(f"{dataset_path}/train.csv")
-df = get_valid_images(df, fpath=swap_img_path, img_labels="pos_image_id")
-df = get_valid_images(df, fpath=swap_img_path, img_labels="neg_image_id")
+# print("Loading train:")
+# df = pd.read_csv(f"{dataset_path}/train.csv")
+# df = get_valid_images(df, fpath=swap_img_path, img_labels="pos_image_id")
+# df = get_valid_images(df, fpath=swap_img_path, img_labels="neg_image_id")
 
-train_pos_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="pos_image_id")
+# train_pos_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="pos_image_id")
 
-train_neg_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="neg_image_id")
-# del swap_img
+# train_neg_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="neg_image_id")
+# # del swap_img
 
-store_pkl(train_pos_img, os.path.join(img_path, 'svo_imgenc_train_pos_512.pkl'))
-store_pkl(train_neg_img, os.path.join(img_path, 'svo_imgenc_train_neg_512.pkl'))
-print("Saved embedings")
+# store_pkl(train_pos_img, os.path.join(img_path, 'svo_imgenc_train_pos_512.pkl'))
+# store_pkl(train_neg_img, os.path.join(img_path, 'svo_imgenc_train_neg_512.pkl'))
+# print("Saved embedings")
 
-train_pos_img = tuple(train_pos_img)
-train_neg_img = tuple(train_neg_img)
-
-print("Loading valid:")
-df = pd.read_csv(f"{dataset_path}/val.csv")
-df = get_valid_images(df, fpath=swap_img_path, img_labels="pos_image_id")
-df = get_valid_images(df, fpath=swap_img_path, img_labels="neg_image_id")
-
-valid_pos_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="pos_image_id")
-valid_neg_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="neg_image_id")
-
-store_pkl(valid_pos_img, os.path.join(img_path, 'svo_imgenc_valid_pos_512.pkl'))
-store_pkl(valid_neg_img, os.path.join(img_path, 'svo_imgenc_valid_neg_512.pkl'))
-print("Saved embedings")
-
-valid_pos_img = tuple(valid_pos_img)
-valid_neg_img = tuple(valid_neg_img)
-
-# train_pos_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_pos_512.pkl'))
-# train_neg_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_neg_512.pkl'))
 # train_pos_img = tuple(train_pos_img)
 # train_neg_img = tuple(train_neg_img)
+
+# print("Loading valid:")
+# df = pd.read_csv(f"{dataset_path}/val.csv")
+# df = get_valid_images(df, fpath=swap_img_path, img_labels="pos_image_id")
+# df = get_valid_images(df, fpath=swap_img_path, img_labels="neg_image_id")
+
+# valid_pos_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="pos_image_id")
+# valid_neg_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="neg_image_id")
+
+# store_pkl(valid_pos_img, os.path.join(img_path, 'svo_imgenc_valid_pos_512.pkl'))
+# store_pkl(valid_neg_img, os.path.join(img_path, 'svo_imgenc_valid_neg_512.pkl'))
+# print("Saved embedings")
+
+# valid_pos_img = tuple(valid_pos_img)
+# valid_neg_img = tuple(valid_neg_img)
+
+print("Loading swap:")
+df = pd.read_csv(f"{dataset_path}/svo_probes_swapped.csv")
+df = get_valid_images(df, fpath=swap_img_path, img_labels="pos_image_id")
+df = get_valid_images(df, fpath=swap_img_path, img_labels="neg_image_id")
+
+swap_pos_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="pos_image_id")
+swap_neg_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="neg_image_id")
+
+store_pkl(swap_pos_img, os.path.join(img_path, 'svo_imgenc_swap_pos_512.pkl'))
+store_pkl(swap_neg_img, os.path.join(img_path, 'svo_imgenc_swap_neg_512.pkl'))
+print("Saved embedings")
+
+# swap_pos_img = tuple(swap_pos_img)
+# swap_neg_img = tuple(swap_neg_img)
+
+train_pos_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_pos_512.pkl'))
+train_neg_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_neg_512.pkl'))
+train_pos_img = tuple(train_pos_img)
+train_neg_img = tuple(train_neg_img)
 
 
 
@@ -111,9 +123,14 @@ print("Beginning Ansatz")
 # store_pkl(test_neg_img_tn,os.path.join(img_path, 'svo_test_neg_tns.pkl'))
 # print("Test done")
 
-valid_pos_img_tn = [img_ansatz.ansatz(img.flatten().float()) for img in valid_pos_img]
-store_pkl(valid_pos_img_tn,os.path.join(img_path, 'svo_valid_pos_tns.pkl'))
-valid_neg_img_tn = [img_ansatz.ansatz(img.flatten().float()) for img in valid_neg_img]
-store_pkl(valid_neg_img_tn,os.path.join(img_path, 'svo_valid_neg_tns.pkl'))
-print("Valid done")
+# valid_pos_img_tn = [img_ansatz.ansatz(img.flatten().float()) for img in valid_pos_img]
+# store_pkl(valid_pos_img_tn,os.path.join(img_path, 'svo_valid_pos_tns.pkl'))
+# valid_neg_img_tn = [img_ansatz.ansatz(img.flatten().float()) for img in valid_neg_img]
+# store_pkl(valid_neg_img_tn,os.path.join(img_path, 'svo_valid_neg_tns.pkl'))
+# print("Valid done")
 
+swap_pos_img_tn = [img_ansatz.ansatz(img.flatten().float()) for img in swap_pos_img]
+store_pkl(swap_pos_img_tn,os.path.join(img_path, 'svo_swap_pos_tns.pkl'))
+swap_neg_img_tn = [img_ansatz.ansatz(img.flatten().float()) for img in swap_neg_img]
+store_pkl(swap_neg_img_tn,os.path.join(img_path, 'svo_swap_neg_tns.pkl'))
+print("Swap done")

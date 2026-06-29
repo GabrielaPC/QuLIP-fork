@@ -34,24 +34,19 @@ ansatz = CustomV5Ansatz(layers=2, obmap = {'n': 1, 'p': 1, 's': 1, 'out': 9})
 
 root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'QML')
 
-dataset_path = os.path.join(root_path, 'dataset/aro_datasets/visual_genome_attribution')
-pkl_path = os.path.join(root_path, 'aro/curried/attribution')
+
+relation = False
+# relation = True
+
+if relation:
+    dataset_path = os.path.join(root_path, 'dataset/aro_datasets/visual_genome_relation')
+    pkl_path = os.path.join(root_path, 'aro/curried/relation')
+else:
+    dataset_path = os.path.join(root_path, 'dataset/aro_datasets/visual_genome_attribution')
+    pkl_path = os.path.join(root_path, 'aro/curried/attribution')
 img_path = os.path.join(root_path,"dataset/aro_images")
 
 
-# def df2einsums(df):
-
-#     df = sent2tree(df, labels=["corrected_sentence"])
-#     einsum_arr = tree2tn(df, ['corrected_sentence_tree'])
-#     qcs_curried = tn2qc(einsum_arr, ansatz, True)
-
-#     einsums = []
-
-#     for einsum_arr, param_arr in tqdm(sum(qcs_curried, [])):
-#         einsums.append((einsum_arr, param_arr))
-
-#     print(f"len: {len(einsums)}")
-#     return einsums
 
 
 def df2einsums_aro(df):
@@ -68,16 +63,6 @@ def df2einsums_aro(df):
 
 
     for einsum_arr, param_arr in tqdm(sum(qcs_curried_pos, [])):
-        new_param_arr = []
-        new_einsum_arr = [[], einsum_arr[1][:]]
-        for i in range(len(param_arr)):
-            if param_arr[i][1] != '0_dag':
-                new_param_arr.append(param_arr[i])
-                new_einsum_arr[0].append(einsum_arr[0][i])
-
-        einsum_arr = new_einsum_arr
-        new_einsum_arr = [[],""]
-
         for x in einsum_arr[0]:
             new_einsum_arr[0].append("".join(x))
         new_einsum_arr[0] = str(new_einsum_arr[0])[2:-2].replace(" ","").replace("'","")
@@ -87,19 +72,11 @@ def df2einsums_aro(df):
 
         einsum_arr = f"{new_einsum_arr[0]}->{new_einsum_arr[1]}"
 
-        einsums.append([(einsum_arr, new_param_arr)])
+        einsums.append([(einsum_arr, param_arr)])
 
 
     j = 0
     for einsum_arr, param_arr in tqdm(sum(qcs_curried_neg, [])):
-        new_param_arr = []
-        new_einsum_arr = [[], einsum_arr[1][:]]
-        for i in range(len(param_arr)):
-            if param_arr[i][1] != '0_dag':
-                new_param_arr.append(param_arr[i])
-                new_einsum_arr[0].append(einsum_arr[0][i])
-
-        einsum_arr = new_einsum_arr
         new_einsum_arr = [[],""]
 
         for x in einsum_arr[0]:
@@ -111,10 +88,8 @@ def df2einsums_aro(df):
 
         einsum_arr = f"{new_einsum_arr[0]}->{new_einsum_arr[1]}"
 
-        einsums[j].append((einsum_arr, new_param_arr))
+        einsums[j].append((einsum_arr, param_arr))
         j +=1
-
-    # print(einsums)
 
     print(f"len: {len(einsums)}")
     return einsums
@@ -125,7 +100,7 @@ df = pd.read_json(f"{dataset_path}/train.json")
 df = get_valid_images(df, fpath=img_path, img_labels="image_id")
 
 einsums = df2einsums_aro(df)
-with open(f"{pkl_path}/aro_train_dagless_einsum_as_12.pkl", 'wb') as f:
+with open(f"{pkl_path}/aro_train_einsum_as_12.pkl", 'wb') as f:
     pickle.dump(einsums, f)
 
 # df = pd.read_csv(f"{dataset_path}/test.csv")
@@ -133,7 +108,7 @@ df = pd.read_json(f"{dataset_path}/test.json")
 df = get_valid_images(df, fpath=img_path, img_labels="image_id")
 
 einsums = df2einsums_aro(df)
-with open(f"{pkl_path}/aro_test_dagless_einsum_as_12.pkl", 'wb') as f:
+with open(f"{pkl_path}/aro_test_einsum_as_12.pkl", 'wb') as f:
     pickle.dump(einsums, f)
 
 # df = pd.read_csv(f"{dataset_path}/val.csv")
@@ -141,5 +116,5 @@ df = pd.read_json(f"{dataset_path}/val.json")
 df = get_valid_images(df, fpath=img_path, img_labels="image_id")
 
 einsums = df2einsums_aro(df)
-with open(f"{pkl_path}/aro_valid_dagless_einsum_as_12.pkl", 'wb') as f:
+with open(f"{pkl_path}/aro_valid_einsum_as_12.pkl", 'wb') as f:
     pickle.dump(einsums, f)

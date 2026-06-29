@@ -38,58 +38,36 @@ pkl_path = os.path.join(root_path,"svo/curried")
 img_path = os.path.join(root_path,"dataset/svo_probes_images")
 
 
-def df2einsums(df):
+def df2tn(df):
     df = sent2tree(df, labels=["corrected_sentence"])
     einsum_arr = tree2tn(df, ['corrected_sentence_tree'])
-    qcs_curried = tn2qc(einsum_arr, ansatz, True)
-
-    einsums = []
-
-    for einsum_arr, param_arr in tqdm(sum(qcs_curried, [])):
-        new_einsum_arr = [[],""]
-        for x in einsum_arr[0]:
-            new_einsum_arr[0].append("".join(x))
-        new_einsum_arr[0] = str(new_einsum_arr[0])[2:-2].replace(" ","").replace("'","")
-
-        for x in einsum_arr[1]:
-            new_einsum_arr[1] += "".join(x)
-
-        einsum_arr = f"{new_einsum_arr[0]}->{new_einsum_arr[1]}"
-        
-        einsums.append((einsum_arr, param_arr))
-
-    print(f"len: {len(einsums)}")
-    return einsums
-
+    return df
 
 df = pd.read_csv(f"{dataset_path}/train.csv")
 df = get_valid_images(df, fpath=img_path, img_labels="pos_image_id")
 df = get_valid_images(df, fpath=img_path, img_labels="neg_image_id")
 
-einsums = df2einsums(df)
-with open(f"{pkl_path}/svo_train_dagless_einsum_as_12.pkl", 'wb') as f:
-    pickle.dump(einsums, f)
+df = df2tn(df)
+df.to_csv(f"{dataset_path}/train.csv")
+
 
 df = pd.read_csv(f"{dataset_path}/test.csv")
 df = get_valid_images(df, fpath=img_path, img_labels="pos_image_id")
 df = get_valid_images(df, fpath=img_path, img_labels="neg_image_id")
 
-einsums = df2einsums(df)
-with open(f"{pkl_path}/svo_test_dagless_einsum_as_12.pkl", 'wb') as f:
-    pickle.dump(einsums, f)
+df = df2tn(df)
+df.to_csv(f"{dataset_path}/test.csv")
 
 df = pd.read_csv(f"{dataset_path}/val.csv")
 df = get_valid_images(df, fpath=img_path, img_labels="pos_image_id")
 df = get_valid_images(df, fpath=img_path, img_labels="neg_image_id")
 
-einsums = df2einsums(df)
-with open(f"{pkl_path}/svo_valid_dagless_einsum_as_12.pkl", 'wb') as f:
-    pickle.dump(einsums, f)
+df = df2tn(df)
+df.to_csv(f"{dataset_path}/val.csv")
 
 df = pd.read_csv(f"{dataset_path}/svo_probes_swapped.csv")
 df = get_valid_images(df, fpath=img_path, img_labels="pos_image_id")
 df = get_valid_images(df, fpath=img_path, img_labels="neg_image_id")
 
-einsums = df2einsums(df)
-with open(f"{pkl_path}/svo_swap_dagless_einsum_as_12.pkl", 'wb') as f:
-    pickle.dump(einsums, f)
+df = df2tn(df)
+df.to_csv(f"{dataset_path}/svo_probes_swapped.csv")
