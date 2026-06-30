@@ -18,9 +18,17 @@ from modules.quantum import *
 os.chdir(root_path)
 root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'QML')
 
-txt_path = os.path.join(root_path, 'aro/curried/relation')
-txt_path = os.path.join(root_path, 'aro/relation')
-img_path = os.path.join(root_path, 'img_encodings/ARO/Relation')
+relation = False
+# relation = True
+
+if relation:
+    txt_path = os.path.join(root_path, 'aro/curried/relation')
+    txt_path = os.path.join(root_path, 'aro/relation')
+    img_path = os.path.join(root_path, 'img_encodings/ARO/Relation')
+else:
+    txt_path = os.path.join(root_path, 'aro/curried/attribution')
+    txt_path = os.path.join(root_path, 'aro/attribution')
+    img_path = os.path.join(root_path, 'img_encodings/ARO/Attribution')
 
 OBMAP = (5,5,5)
 NLAYERS = 3
@@ -88,13 +96,17 @@ model.compile_dataset2(test_loader, 'aro')
 print(f"Unique Contractions: {len(model.path_cache)}")
 
 dtime = time.strftime("%m_%d_%H;%M;%S")
-fpath = os.path.join(root_path, 'aro_runs/relation', dtime)
+if relation:
+    fpath = os.path.join(root_path, 'aro_runs/relation', dtime) 
+else:
+    fpath = os.path.join(root_path, 'aro_runs/attribution', dtime) 
+
 if not os.path.exists(fpath):
     os.makedirs(fpath)
 db_path = os.path.join(root_path, 'mlf.db')
 mlflow.pytorch.autolog()
 mlflow.set_tracking_uri(f"sqlite:///{db_path}")
-mlflow.set_experiment('qclip_aro_rel')
+mlflow.set_experiment('qclip_aro')
 
 EPOCHS = 100
 LEARNING_RATE = 1e-2

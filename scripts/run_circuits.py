@@ -41,13 +41,14 @@ usable_shots = 1000
 shots = 64 * usable_shots
 
 
-root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'QML')
+root_path = os.path.join(os.getcwd(), 'data')
 txt_path = os.path.join(root_path, 'svo/curried')
 # txt_path = os.path.join(root_path, 'svo/')
 img_path = os.path.join(root_path, 'img_encodings/SVO/')
 
 
 test_einsum = load_pkl(os.path.join(txt_path, 'svo_test_einsum_as_12.pkl'))
+# test_einsum = load_pkl(os.path.join(txt_path, 'svo_swap_einsum_as_12.pkl'))
 
 IMG_DIM = 512
 
@@ -56,6 +57,11 @@ train_neg_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_neg_512.pkl'))
 
 test_pos_img = load_pkl(os.path.join(img_path, 'svo_test_pos_tns.pkl'))
 test_neg_img = load_pkl(os.path.join(img_path, 'svo_test_neg_tns.pkl'))
+
+# test_pos_img = load_pkl(os.path.join(img_path, 'svo_swap_pos_tns.pkl'))
+# test_neg_img = load_pkl(os.path.join(img_path, 'svo_swap_neg_tns.pkl'))
+
+
 
 
 test_einsum = tuple(test_einsum)
