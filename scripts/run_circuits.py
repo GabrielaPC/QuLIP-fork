@@ -62,7 +62,7 @@ test_einsum = tuple(test_einsum)
 test_pos_img = tuple(test_pos_img)
 test_neg_img = tuple(test_neg_img)
 
-params = load_pkl(os.path.join(root_path, 'svo_runs/06_26_12;13;24/model.lt'))
+params = load_pkl(os.path.join(root_path, 'svo_runs/06_30_10;06;59/model.lt'))
 all_params_dict = {}
 img_params_dict = {}
 for i in range(len(params['model_symbols'])):

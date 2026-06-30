@@ -63,6 +63,8 @@ def df2einsums_aro(df):
 
 
     for einsum_arr, param_arr in tqdm(sum(qcs_curried_pos, [])):
+        new_einsum_arr = [[],""]
+
         for x in einsum_arr[0]:
             new_einsum_arr[0].append("".join(x))
         new_einsum_arr[0] = str(new_einsum_arr[0])[2:-2].replace(" ","").replace("'","")

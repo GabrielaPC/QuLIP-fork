@@ -9,8 +9,12 @@ from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.circuit import Parameter
 import numpy as np
 
+
+from modules.tensor_network import *
+
 OUT_DIM = 9
 dev = qml.device('default.qubit', wires=OUT_DIM)
+
 
 
 def convert_einsum(expr):

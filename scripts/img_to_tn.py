@@ -25,6 +25,7 @@ from modules.data_processing import *
 from modules.model import *
 from modules.util import *
 from modules.functor import *
+from modules.tensor_network import *
 
 
 root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'QML')
@@ -49,15 +50,15 @@ swap_img_path = os.path.join(root_path, 'dataset/svo_probes_images')
 # test_pos_img = tuple(test_pos_img)
 # test_neg_img = tuple(test_neg_img)
 
-# print("Loading train:")
-# df = pd.read_csv(f"{dataset_path}/train.csv")
-# df = get_valid_images(df, fpath=swap_img_path, img_labels="pos_image_id")
-# df = get_valid_images(df, fpath=swap_img_path, img_labels="neg_image_id")
+print("Loading train:")
+df = pd.read_csv(f"{dataset_path}/train.csv")
+df = get_valid_images(df, fpath=swap_img_path, img_labels="pos_image_id")
+df = get_valid_images(df, fpath=swap_img_path, img_labels="neg_image_id")
 
-# train_pos_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="pos_image_id")
+train_pos_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="pos_image_id")
 
-# train_neg_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="neg_image_id")
-# # del swap_img
+train_neg_img = load_embeddings_from_df(df, fpath=swap_img_path, img_labels="neg_image_id")
+
 
 # store_pkl(train_pos_img, os.path.join(img_path, 'svo_imgenc_train_pos_512.pkl'))
 # store_pkl(train_neg_img, os.path.join(img_path, 'svo_imgenc_train_neg_512.pkl'))
@@ -96,11 +97,8 @@ print("Saved embedings")
 # swap_pos_img = tuple(swap_pos_img)
 # swap_neg_img = tuple(swap_neg_img)
 
-train_pos_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_pos_512.pkl'))
-train_neg_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_neg_512.pkl'))
-train_pos_img = tuple(train_pos_img)
-train_neg_img = tuple(train_neg_img)
-
+# train_pos_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_pos_512.pkl'))
+# train_neg_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_neg_512.pkl'))
 
 
 img_dataset = train_pos_img

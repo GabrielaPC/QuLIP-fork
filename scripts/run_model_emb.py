@@ -23,10 +23,10 @@ img_path = os.path.join(root_path, 'img_encodings/SVO')
 
 OBMAP = (5,5,5)
 NLAYERS = 3
-train_einsum = load_pkl(os.path.join(txt_path, 'svo_train_dagless_einsum_as_12.pkl'))
-valid_einsum = load_pkl(os.path.join(txt_path, 'svo_valid_dagless_einsum_as_12.pkl'))
-test_einsum = load_pkl(os.path.join(txt_path, 'svo_test_dagless_einsum_as_12.pkl'))
-# test_einsum = load_pkl(os.path.join(txt_path, 'svo_swap_dagless_einsum_as_12.pkl'))
+train_einsum = load_pkl(os.path.join(txt_path, 'svo_train_einsum_as_12.pkl'))
+valid_einsum = load_pkl(os.path.join(txt_path, 'svo_valid_einsum_as_12.pkl'))
+test_einsum = load_pkl(os.path.join(txt_path, 'svo_test_einsum_as_12.pkl'))
+# test_einsum = load_pkl(os.path.join(txt_path, 'svo_swap_einsum_as_12.pkl'))
 
 IMG_DIM = 512
 
