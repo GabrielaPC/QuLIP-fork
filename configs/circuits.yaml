@@ -1,0 +1,9 @@
+backend: 'noiseless' 
+swap: True
+img_ansatz: True
+
+
+txt_path: "data/svo/curried"
+img_path: "data/img_encodings/SVO"
+
+model_path: "data/svo_runs/06_30_10;06;59"

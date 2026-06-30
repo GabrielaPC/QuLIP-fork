@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from tqdm import trange, tqdm
 import pandas as pid
 import numpy as np
-import torch, os, clip, pickle, mlflow, time, sys
+import torch, os, clip, pickle, mlflow, time, sys, argparse, yaml
 from math import acos
 
 
@@ -13,6 +13,8 @@ from qiskit_ibm_runtime import SamplerV2 as Sampler
 from qiskit_ibm_runtime import QiskitRuntimeService
 from qiskit_aer import AerSimulator
 from qiskit import transpile
+from qiskit_ibm_runtime.fake_provider import FakeMiami
+
 
 root_path = os.getcwd()
 sys.path.insert(0, root_path)
@@ -20,55 +22,44 @@ sys.path.insert(0, root_path)
 os.chdir(root_path)
 
 print(os.getcwd())
-
+# uv run python train.py --config configs/tensor_network.yaml
 
 from modules.data_processing import *
 from modules.quantum import *
 
 
-NQUBITS = 5
-NLAYERS = 3
-IMG_DIM = 512
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', type=str, required=True, help='Path to experiment config YAML')
+args = parser.parse_args()
 
+with open(args.config, 'r') as file:
+        config = yaml.safe_load(file)
+
+IMG_QUBITS = config.get("img_dim", 512)
+
+if config['backend'] == 'IBM':
+    backend = FakeMiami()
 backend = AerSimulator()
+
 backend.set_options(
-    max_parallel_threads = 0,
+    max_parallel_threads = 0, 
     max_parallel_experiments = 0,
 )
 sampler = Sampler(backend)
 
-usable_shots = 1000
+usable_shots = params_dict.update(img_params_dict)
 shots = 64 * usable_shots
 
+test_einsum = load_pkl(config['txt_path'])
 
-root_path = os.path.join(os.getcwd(), 'data')
-txt_path = os.path.join(root_path, 'svo/curried')
-# txt_path = os.path.join(root_path, 'svo/')
-img_path = os.path.join(root_path, 'img_encodings/SVO/')
-
-
-test_einsum = load_pkl(os.path.join(txt_path, 'svo_test_einsum_as_12.pkl'))
-# test_einsum = load_pkl(os.path.join(txt_path, 'svo_swap_einsum_as_12.pkl'))
-
-IMG_DIM = 512
-
-train_pos_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_pos_512.pkl'))
-train_neg_img = load_pkl(os.path.join(img_path, 'svo_imgenc_train_neg_512.pkl'))
-
-test_pos_img = load_pkl(os.path.join(img_path, 'svo_test_pos_tns.pkl'))
-test_neg_img = load_pkl(os.path.join(img_path, 'svo_test_neg_tns.pkl'))
-
-# test_pos_img = load_pkl(os.path.join(img_path, 'svo_swap_pos_tns.pkl'))
-# test_neg_img = load_pkl(os.path.join(img_path, 'svo_swap_neg_tns.pkl'))
-
-
-
+test_pos_img = load_pkl(config['img_path']['pos_path'])
+test_neg_img = load_pkl(config['img_path']['neg_path'])
 
 test_einsum = tuple(test_einsum)
 test_pos_img = tuple(test_pos_img)
 test_neg_img = tuple(test_neg_img)
 
-params = load_pkl(os.path.join(root_path, 'svo_runs/06_30_10;06;59/model.lt'))
+params = load_pkl(config['model_path'])
 all_params_dict = {}
 img_params_dict = {}
 for i in range(len(params['model_symbols'])):
@@ -84,22 +75,31 @@ data_size = len(test_einsum)
 print(f"data_size:{data_size}")
 acc = 0
 
+ansatz = config.get("img_ansatz", False)
+
 pos_circs = []
 neg_circs = []
-for i in range(data_size):
-# for i in range(3):
+# for i in range(data_size):
+for i in range(3):
     try:
         qc_txt, output_qubits, params_dict = tn2qiskit(expr2list(test_einsum[i][0]), test_einsum[i][1], meas_output=False, all_params_dict=all_params_dict)
 
         for i in range(qc_txt.num_qubits):
             if i not in output_qubits:
                 qc_txt.measure(i,i)
-
-        qc_pos_img, img_output, _ = tn2qiskit(expr2list(test_pos_img[i][0]), test_pos_img[i][1], meas_output=False)
-        qc_neg_img, img_output,_ = tn2qiskit(expr2list(test_neg_img[i][0]), test_neg_img[i][1], meas_output=False)
-
-        params_dict.update(img_params_dict)
-
+        if ansatz:
+            qc_pos_img, img_output, _ = tn2qiskit(expr2list(test_pos_img[i][0]), test_pos_img[i][1], meas_output=False)
+            qc_neg_img, img_output,_ = tn2qiskit(expr2list(test_neg_img[i][0]), test_neg_img[i][1], meas_output=False)
+    
+            params_dict.update(img_params_dict)
+        else:
+            qc_pos_img = QuantumCircuit(IMG_QUBITS, 0)
+            test_pos_img[i] = np.array(test_pos_img[i]/np.linalg.norm(test_pos_img[i]))
+            qc_pos_img.initialize(test_pos_img[i])
+            
+            qc_neg_img = QuantumCircuit(IMG_QUBITS, 0)
+            test_neg_img[i] = np.array(test_neg_img[i]/np.linalg.norm(test_neg_img[i]))
+            qc_neg_img.initialize(test_neg_img[i])
         qc_pos = qc_txt.copy()
         qreg_txt = qc_pos.qregs[0]
         qreg_img = qc_pos_img.qregs[0]

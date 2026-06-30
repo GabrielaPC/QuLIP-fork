@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 from tqdm import trange, tqdm
 import pandas as pid
 import numpy as np
-import torch, os, clip, pickle, mlflow, time, sys
+import torch, os, clip, pickle, mlflow, time, sys, argparse, yaml
 from math import acos
+from qiskit_ibm_runtime.fake_provider import FakeMiami
 
 
 from qiskit.circuit import QuantumCircuit, QuantumRegister, ClassicalRegister
@@ -25,56 +26,38 @@ print(os.getcwd())
 from modules.data_processing import *
 from modules.quantum import *
 
-NQUBITS = 5
-NLAYERS = 3
-IMG_DIM = 512
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', type=str, required=True, help='Path to experiment config YAML')
+args = parser.parse_args()
 
+with open(args.config, 'r') as file:
+        config = yaml.safe_load(file)
+
+IMG_QUBITS = config.get("img_dim", 512)
+
+if config['backend'] == 'IBM':
+    backend = FakeMiami()
 backend = AerSimulator()
+
 backend.set_options(
-    max_parallel_threads = 0,
+    max_parallel_threads = 0, 
     max_parallel_experiments = 0,
 )
 sampler = Sampler(backend)
 
-usable_shots = 1000
+usable_shots = config.get("usable_shots", 1000)
 shots = 64 * usable_shots
 
+test_einsum = load_pkl(config['txt_path'])
 
-relation = True
-
-root_path = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'QML')
-
-if relation:
-    txt_path = os.path.join(root_path, 'aro/curried/relation')
-    img_path = os.path.join(root_path, 'img_encodings/ARO/Relation')
-else:
-    txt_path = os.path.join(root_path, 'aro/curried/attribution')
-    img_path = os.path.join(root_path, 'img_encodings/ARO/Attribution')
-
-test_einsum = load_pkl(os.path.join(txt_path, 'aro_test_einsum_as_12.pkl'))
-
-IMG_DIM = 512
-
-if relation:
-    train_img = load_pkl(os.path.join(img_path, 'rel_imgenc_train_512.pkl'))
-else:
-    train_img = load_pkl(os.path.join(img_path, 'att_imgenc_train_512.pkl'))    
-
-test_img = load_pkl(os.path.join(img_path, 'aro_test_tns.pkl'))
-
-
-img_dataset = [x.float().flatten() for x in train_img]
-img_ansatz = ImageFeatureMap(img_dataset, k=9)
-
+test_img = load_pkl(config['img_path']['single_path'])
 
 test_einsum = tuple(test_einsum)
 test_img = tuple(test_img)
 
-if relation:
-    params = load_pkl(os.path.join(root_path, 'aro_runs/relation/06_27_08;55;46/model.lt'))
-else:
-    params = load_pkl(os.path.join(root_path, 'aro_runs/attribution/06_27_08;55;46/model.lt'))
+ansatz = config.get("img_ansatz", False)
 
+params = load_pkl(config['model_path'])
 all_params_dict = {}
 img_params_dict = {}
 for i in range(len(params['model_symbols'])):
@@ -95,27 +78,31 @@ neg_circs = []
 for i in range(data_size):
 # for i in range(10):
     try:
-        qc_img, img_output, _ = tn2qiskit(expr2list(test_img[i][0]), test_img[i][1], meas_output=False)
-       
+
         qc_pos, output_qubits, params_dict = tn2qiskit(expr2list(test_einsum[i][0][0]), test_einsum[i][0][1], meas_output=False, all_params_dict=all_params_dict)
 
         for i in range(qc_pos.num_qubits):
             if i not in output_qubits:
-                qc_pos.measure(i,i)
+                qc_pos.measure(i,i)       
 
-       
+        if ansatz:
+            qc_img, _, _ = tn2qiskit(expr2list(test_img[i][0]), test_img[i][1], meas_output=False)
+            params_dict.update(img_params_dict)
+        else:
+            qc_img = QuantumCircuit(IMG_QUBITS, 0)
+            test_img[i] = np.array(test_img[i]/np.linalg.norm(test_img[i]))
+            qc_img.initialize(test_img[i])
 
-        params_dict.update(img_params_dict)
 
-        qc_pos_img = qc_img.copy()
+        qc_img = qc_img.copy()
         qreg_txt = qc_pos.qregs[0]
-        qreg_img = qc_pos_img.qregs[0]
+        qreg_img = qc_img.qregs[0]
 
         qreg_anc = QuantumRegister(1, "q_anc")
         creg_anc = ClassicalRegister(1, "c_anc")
 
         qc_pos.add_register(qreg_img, qreg_anc, creg_anc)
-        qc_pos.compose(qc_pos_img, qreg_img, inplace=True)
+        qc_pos.compose(qc_img, qreg_img, inplace=True)
         qc_pos.h(qreg_anc)
         for i in range(len(output_qubits)):
             qc_pos.cswap(qreg_anc, qreg_txt[output_qubits[i]], qreg_img[i])
