@@ -47,7 +47,7 @@ backend.set_options(
 )
 sampler = Sampler(backend)
 
-usable_shots = params_dict.update(img_params_dict)
+usable_shots = config.get("usable_shots", 1000)
 shots = 64 * usable_shots
 
 test_einsum = load_pkl(config['txt_path'])

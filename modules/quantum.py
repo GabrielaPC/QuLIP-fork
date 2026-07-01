@@ -5,7 +5,8 @@ from tqdm import tqdm
 from random import randint
 import torch
 import pennylane as qml
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
+from qiskit.quantum_info import Statevector
 from qiskit.circuit import Parameter
 import numpy as np
 
@@ -412,7 +413,7 @@ def tn2qc(tn_arr, ansatz, curry=False):
 from sklearn.decomposition import PCA
 
 class ImageFeatureMap(BaseAnsatz):
-    def __init__(self, clip_dataset, k, obmap=set(), layers=2):
+    def __init__(self, clip_dataset, k, obmap={'n': 0, 's': 0, 'p': 0, 'out': 9}, layers=2):
         super().__init__(obmap, layers)
         self.clip_dataset = clip_dataset
         self.k = k
@@ -739,3 +740,19 @@ def run_circuits(qc_array, sampler, shots):
 
 def acc_circ(pos_f, neg_f):
     return (torch.sum((pos_f > neg_f))/len(pos_f)).item()
+
+def get_txt_state_vector(qc, output_qubits, param_dict):
+    real_n = 2**(len(output_qubits))
+    remaped_qubits = [i for i in range(qc.num_qubits) if i not in output_qubits]
+    output_qubits.extend(remaped_qubits)
+        
+    new_qc = transpile(qc, initial_layout = output_qubits)
+    new_qc = new_qc.assign_parameters(param_dict)
+    new_qc.remove_final_measurements()
+    st_vec = np.array(Statevector(new_qc))[:real_n]
+
+    return st_vec
+
+
+
+
